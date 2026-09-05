@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dame noire</title>
+<style>
+body{margin:0;background:#12321f;color:#f4f1e8;font-family:system-ui,sans-serif}
+header{text-align:center;background:#0b1d12;padding:16px}
+main{max-width:1100px;margin:auto;padding:16px}.status{text-align:center;min-height:65px}
+.table{position:relative;max-width:820px;height:440px;margin:10px auto;border-radius:50%;
+background:#176139;border:9px solid #09160e;box-shadow:inset 0 0 55px #061b0d}
+.seat{position:absolute;width:145px;padding:9px;text-align:center;background:#173322;
+border:1px solid #5d7e69;border-radius:10px}.top{top:10px;left:50%;transform:translateX(-50%)}
+.left{left:10px;top:50%;transform:translateY(-50%)}.right{right:10px;top:50%;transform:translateY(-50%)}
+.bottom{bottom:10px;left:50%;transform:translateX(-50%)}.center{position:absolute;left:50%;top:50%;
+transform:translate(-50%,-50%);width:390px;text-align:center}.trick{display:flex;justify-content:center;
+flex-wrap:wrap;gap:7px;min-height:100px}.hand{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+.card{width:56px;height:78px;border:2px solid #ddd;border-radius:7px;background:#fff;color:#111;
+display:flex;align-items:center;justify-content:center;font-weight:800;cursor:pointer;box-shadow:0 2px 5px #0008}
+.card.red{color:#a00}.card.trump{background:#f1dca5}.card.excuse{background:#eee0f4;color:#67217f}
+.card.disabled{opacity:.35;cursor:not-allowed}.card.selected{outline:4px solid #f4c542;transform:translateY(-6px)}
+button{padding:9px 15px;border:0;border-radius:7px;font-weight:700;cursor:pointer}
+section{margin-top:18px}table{width:100%;border-collapse:collapse;background:#173322}
+th,td{padding:7px;border:1px solid #5d7e69;text-align:center}.small{opacity:.8;font-size:.9rem}
+@media(max-width:700px){.table{height:380px}.seat{width:105px;font-size:.8rem}.center{width:250px}.card{width:46px;height:67px;font-size:.75rem}}
+</style>
+</head>
+<body>
+<header><h1>♠ Dame noire</h1><div>5 joueurs · objectif : le moins de points</div></header>
+<main>
+<div class="status"><div id="info"></div><div id="msg"></div><div id="controls"></div></div>
+<div class="table">
+ <div class="seat top" id="p2"></div><div class="seat left" id="p3"></div>
+ <div class="seat right" id="p1"></div><div class="seat bottom" id="p0"></div>
+ <div class="center"><div class="trick" id="trick"></div></div>
+</div>
+<h2>Votre main</h2><div class="hand" id="hand"></div>
+<section><h2>Scores</h2><div id="scores"></div></section>
+</main>
+<script>
+const NAMES=["Vous","Alice","Bruno","Chloé","David"];
+const SUITS=["♣","♦","♥","♠"], RANKS=["A","2","3","4","5","6","7","8","9","10","V","C","D","R"];
+const strength=Object.fromEntries(RANKS.map((r,i)=>[r,i]));
+let G;
+
+function deck(){
+ let d=[];
+ for(const s of SUITS)for(const r of RANKS)d.push({id:s+r,type:"suit",suit:s,rank:r,strength:strength[r],points:0});
+ for(let n=1;n<=21;n++)d.push({id:"A"+n,type:"trump",rank:""+n,strength:n,points:n});
+ d.push({id:"E",type:"excuse",rank:"Excuse",strength:-1,points:0}); return d;
+}
+function shuffle(a){for(let i=a.length-1;i;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function label(c){return c.type==="trump"?"A"+c.rank:c.type==="excuse"?"Excuse":c.rank+c.suit}
+function legal(hand,trick){
+ if(!trick.length)return hand.filter(c=>c.type==="suit"||c.type==="excuse");
+ let lead=trick.find(c=>c.type!=="excuse");
+ if(!lead)return hand;
+ let same=lead.type==="suit"?hand.filter(c=>c.type==="suit"&&c.suit===lead.suit):[];
+ if(same.length)return same.concat(hand.filter(c=>c.type==="excuse"));
+ let ats=hand.filter(c=>c.type==="trump");
+ if(ats.length)return ats.concat(hand.filter(c=>c.type==="excuse"));
+ return hand;
+}
+function winner(trick){
+ let lead=trick.find(c=>c.type!=="excuse"); if(!lead)return 0;
+ let best=-1,bestc=null;
+ trick.forEach((c,i)=>{
+  if(c.type==="excuse")return;
+  if(best<0){best=i;bestc=c;return}
+  if(lead.type==="suit"&&c.type==="suit"&&c.suit===lead.suit&&c.strength>bestc.strength){best=i;bestc=c}
+ });
+ return best;
+}
+function points(t){return t.reduce((s,c)=>s+c.points,0)}
+function newRound(){
+ let d=shuffle(deck());G.hands=[[],[],[],[],[]];
+ for(let i=0;i<75;i++)G.hands[i%5].push(d[i]);G.dog=d.slice(75);
+ G.out=[null,null,null,null,null];G.phase="exchange";G.sel=[];G.trick=[];G.trickPlayers=[];
+ G.leader=(G.dealer+1)%5;G.current=G.leader;G.history=[];
+ for(let i=1;i<5;i++)G.out[i]=chooseExchange(G.hands[i]);
+ G.msg="Choisissez 3 cartes à donner.";
+ render();
+}
+function init(){
+ G={round:1,dealer:4,leader:0,current:0,hands:[],dog:[],scores:[0,0,0,0,0],
+ phase:"exchange",sel:[],out:[],history:[],msg:""};
+ newRound();
+}
+function chooseExchange(h){
+ return [...h].sort((a,b)=>risk(b)-risk(a)).slice(0,3)
+}
+function risk(c){
+ if(c.type==="trump")return 20+c.points;
+ if(c.type==="suit")return c.strength+(c.suit==="♠"&&c.rank==="D"?40:0);
+ return -20;
+}
+function exchange(){
+ let out=G.out;out[0]=G.sel.slice();
+ let dir=G.round%2?1:-1,incoming=[[],[],[],[],[]];
+ for(let i=0;i<5;i++)incoming[(i+dir+5)%5]=out[i];
+ for(let i=0;i<5;i++){
+  let ids=new Set(out[i].map(c=>c.id));
+  G.hands[i]=G.hands[i].filter(c=>!ids.has(c.id)).concat(incoming[i]);
+ }
+ G.phase="play";G.current=G.leader;G.msg=NAMES[G.current]+" commence le premier pli.";
+ render();if(G.current)ai();
+}
+function play(p,c){
+ let ok=legal(G.hands[p],G.trick).some(x=>x.id===c.id);if(!ok)return;
+ G.hands[p]=G.hands[p].filter(x=>x.id!==c.id);G.trick.push(c);G.trickPlayers.push(p);
+ if(G.trick.length<5){G.current=(p+1)%5;render();if(G.current)ai()}
+ else resolve();
+}
+function resolve(){
+ let wi=winner(G.trick),win=G.trickPlayers[wi],pts=points(G.trick);
+ G.scores[win]+=pts;G.history.push({winner:win,cards:G.trick.slice()});
+ G.msg=NAMES[win]+" remporte le pli ("+pts+" point"+(pts>1?"s":"") +").";
+ G.trick=[];G.trickPlayers=[];G.current=win;
+ if(G.hands[0].length===0){finish();return}
+ render();if(G.current)ai();
+}
+function finish(){
+ let req=new Set(deck().filter(c=>(c.type==="trump")||(c.type==="suit"&&c.suit==="♠"&&c.rank==="D"))
+   .filter(c=>!G.dog.some(x=>x.id===c.id)).map(c=>c.id));
+ let got=[new Set(),new Set(),new Set(),new Set(),new Set()];
+ for(const h of G.history)for(const c of h.cards)if(c.type==="trump"||(c.type==="suit"&&c.suit==="♠"&&c.rank==="D"))
+   got[h.winner].add(c.id);
+ let shooter=got.findIndex(s=>[...req].every(id=>s.has(id)));
+ if(shooter>=0){
+   G.scores=G.scores.map((s,i)=>i===shooter?0:s+281);
+   G.msg="☀️ "+NAMES[shooter]+" réalise un 281 !";
+ } else G.msg="Manche terminée.";
+ if(G.scores.some(s=>s>=1000)){
+   G.phase="gameEnd";let min=Math.min(...G.scores),wins=NAMES[G.scores.indexOf(min)];
+   G.msg+=" Partie terminée : "+wins+" gagne avec "+min+" point(s).";
+ }else{
+   G.phase="roundEnd";
+   // Le joueur qui a commencé devient le donneur suivant.
+   G.dealer=G.leader;
+ }
+ render();
+}
+function ai(){
+ setTimeout(()=>{
+  if(G.phase!=="play"||!G.current)return;
+  let h=G.hands[G.current], l=legal(h,G.trick);
+  let c=choosePlay(h,l,G.trick);play(G.current,c);
+ },450);
+}
+function choosePlay(h,l,t){
+ let lead=t.find(c=>c.type!=="excuse");
+ if(lead&&lead.type==="suit"){
+  let same=l.filter(c=>c.type==="suit"&&c.suit===lead.suit);
+  if(same.length){
+   let max=t.filter(c=>c.type==="suit"&&c.suit===lead.suit).reduce((m,c)=>Math.max(m,c.strength),-1);
+   let safe=same.filter(c=>c.strength<max);
+   if(safe.length)return safe.sort((a,b)=>b.strength-a.strength)[0];
+  }
+ }
+ return [...l].sort((a,b)=>(a.points-b.points)||(a.strength-b.strength))[0];
+}
+function card(c,click,sel=false,disabled=false){
+ let e=document.createElement("div");e.className="card "+(c.type==="trump"?"trump ":"")+
+   (c.type==="excuse"?"excuse ":"")+(["♦","♥"].includes(c.suit)?"red ":"")+
+   (sel?"selected ":"")+(disabled?"disabled":"");e.textContent=label(c);
+ if(click)e.onclick=click;return e;
+}
+function render(){
+ document.getElementById("info").innerHTML="<b>Manche "+G.round+"</b> · Donneur : "+NAMES[G.dealer]+
+ " · Premier joueur : "+NAMES[G.leader]+" · "+G.phase;
+ document.getElementById("msg").textContent=G.msg;
+ for(let i=0;i<5;i++)document.getElementById("p"+i).innerHTML="<b>"+NAMES[i]+"</b><br>"+G.hands[i].length+" cartes"+
+   (G.phase==="play"&&G.current===i?"<br>▶ à jouer":"");
+ let h=document.getElementById("hand");h.innerHTML="";
+ [...G.hands[0]].sort((a,b)=>(a.type.localeCompare(b.type))||(a.strength-b.strength)).forEach(c=>{
+  let l=G.phase==="play"?legal(G.hands[0],G.trick):G.hands[0];
+  let dis=G.phase==="play"&&!l.some(x=>x.id===c.id);
+  h.appendChild(card(c,dis?null:()=>G.phase==="exchange"?toggle(c):play(0,c),G.sel.some(x=>x.id===c.id),dis));
+ });
+ let tr=document.getElementById("trick");tr.innerHTML="";
+ G.trick.forEach((c,i)=>{let e=card(c,null);e.title=NAMES[G.trickPlayers[i]];tr.appendChild(e)});
+ let co=document.getElementById("controls");co.innerHTML="";
+ if(G.phase==="exchange"){let b=document.createElement("button");b.textContent="Confirmer l'échange ("+G.sel.length+"/3)";
+  b.disabled=G.sel.length!==3;b.onclick=exchange;co.appendChild(b)}
+ if(G.phase==="roundEnd"){let b=document.createElement("button");b.textContent="Manche suivante";b.onclick=()=>{G.round++;newRound()};co.appendChild(b)}
+ if(G.phase==="gameEnd"){let b=document.createElement("button");b.textContent="Nouvelle partie";b.onclick=init;co.appendChild(b)}
+ let rows=NAMES.map((n,i)=>"<tr><td>"+n+"</td><td>"+G.scores[i]+"</td></tr>").join("");
+ document.getElementById("scores").innerHTML="<table><tr><th>Joueur</th><th>Score</th></tr>"+rows+"</table>";
+}
+function toggle(c){let i=G.sel.findIndex(x=>x.id===c.id);if(i>=0)G.sel.splice(i,1);else if(G.sel.length<3)G.sel.push(c);render()}
+init();
+</script>
+</body>
+</html>
