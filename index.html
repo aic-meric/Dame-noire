@@ -58,7 +58,7 @@ function deck(){
 function shuffle(a){for(let i=a.length-1;i;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function label(c){return c.type==="trump"?"A"+c.rank:c.type==="excuse"?"Excuse":c.rank+c.suit}
 function legal(hand,trick){
- if(!trick.length){
+ if(G.firstTrick && !trick.length){
     // First trick: no spade or trump. Excuse is always legal.
     return hand.filter(c=>c.type==="suit"&&c.suit!=="♠").concat(hand.filter(c=>c.type==="excuse"));
   }
@@ -84,7 +84,7 @@ function points(t){return t.reduce((s,c)=>s+c.points,0)}
 function newRound(){
  let d=shuffle(deck());G.hands=[[],[],[],[],[]];
  for(let i=0;i<75;i++)G.hands[i%5].push(d[i]);G.dog=d.slice(75);
- G.out=[null,null,null,null,null];G.phase="exchange";G.sel=[];G.trick=[];G.trickPlayers=[];
+ G.out=[null,null,null,null,null];G.phase="exchange";G.sel=[];G.trick=[];G.trickPlayers=[];G.firstTrick=True;
  G.leader=(G.dealer+1)%5;G.current=G.leader;G.history=[];
  for(let i=1;i<5;i++)G.out[i]=chooseExchange(G.hands[i]);
  G.msg="Choisissez 3 cartes à donner au joueur de "+(G.round%2?"droite":"gauche")+".";
@@ -126,6 +126,9 @@ function resolve(){
  G.scores[win]+=pts;G.history.push({winner:win,cards:G.trick.slice()});
  G.msg=NAMES[win]+" remporte le pli ("+pts+" point"+(pts>1?"s":"") +").";
  G.trick=[];G.trickPlayers=[];G.current=win;
+ if(G.firstTrick){
+  G.firstTrick=false;
+ }
  if(G.hands[0].length===0){finish();return}
  render();if(G.current)ai();
 }
