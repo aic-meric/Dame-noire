@@ -84,7 +84,7 @@ function points(t){return t.reduce((s,c)=>s+c.points,0)}
 function newRound(){
  let d=shuffle(deck());G.hands=[[],[],[],[],[]];
  for(let i=0;i<75;i++)G.hands[i%5].push(d[i]);G.dog=d.slice(75);
- G.out=[null,null,null,null,null];G.phase="exchange";G.sel=[];G.trick=[];G.trickPlayers=[];G.firstTrick=True;
+ G.out=[null,null,null,null,null];G.phase="exchange";G.sel=[];G.trick=[];G.trickPlayers=[];G.firstTrick=true;
  G.leader=(G.dealer+1)%5;G.current=G.leader;G.history=[];
  for(let i=1;i<5;i++)G.out[i]=chooseExchange(G.hands[i]);
  G.msg="Choisissez 3 cartes à donner au joueur de "+(G.round%2?"droite":"gauche")+".";
