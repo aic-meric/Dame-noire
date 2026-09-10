@@ -76,6 +76,7 @@ function winner(trick){
  trick.forEach((c,i)=>{
   if(c.type==="excuse")return;
   if(best<0){best=i;bestc=c;return}
+  if(lead.type==="trump"&&c.type==="trump"&&c.strength>bestc.strength){best=i;bestc=c}
   if(lead.type==="suit"&&c.type==="suit"&&c.suit===lead.suit&&c.strength>bestc.strength){best=i;bestc=c}
  });
  return best;
