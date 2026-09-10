@@ -126,9 +126,7 @@ function resolve(){
  G.scores[win]+=pts;G.history.push({winner:win,cards:G.trick.slice()});
  G.msg=NAMES[win]+" remporte le pli ("+pts+" point"+(pts>1?"s":"") +").";
  G.trick=[];G.trickPlayers=[];G.current=win;
- if(G.firstTrick){
-  G.firstTrick=false;
- }
+ G.firstTrick=false;
  if(G.hands[0].length===0){finish();return}
  render();if(G.current)ai();
 }
