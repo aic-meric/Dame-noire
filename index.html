@@ -51,7 +51,7 @@ let G;
 
 function deck(){
  let d=[];
- for(const s of SUITS)for(const r of RANKS)d.push({id:s+r,type:"suit",suit:s,rank:r,strength:strength[r],points:0});
+ for(const s of SUITS)for(const r of RANKS)d.push({id:s+r,type:"suit",suit:s,rank:r,strength:strength[r],points:(s==="♠"&&r==="D"?50:0)});
  for(let n=1;n<=21;n++)d.push({id:"A"+n,type:"trump",rank:""+n,strength:n,points:n});
  d.push({id:"E",type:"excuse",rank:"Excuse",strength:-1,points:0}); return d;
 }
