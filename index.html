@@ -1,12 +1,9 @@
 <!doctype html>
-
 <html lang="fr">
- 
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Dame noire</title>
-
 <style>
 body{margin:0;background:#12321f;color:#f4f1e8;font-family:system-ui,sans-serif}
 header{text-align:center;background:#0b1d12;padding:16px}
@@ -47,14 +44,12 @@ gap:10px}.hand-count{font-size:.9rem;opacity:.85}.error{padding:10px;background:
 <section><h2>Scores</h2><div id="scores"></div></section>
 </main>
 <script>
- 
 const NAMES=["Vous","Alice","Bruno","Chloé","David"];
 const SUITS=["♣","♦","♥","♠"], RANKS=["A","2","3","4","5","6","7","8","9","10","V","C","D","R"];
 const strength=Object.fromEntries(RANKS.map((r,i)=>[r,i]));
- let G; #G désigne l'état actuel de la partie
+let G;
 
-// Distribution des cartes
- function deck(){
+function deck(){
  let d=[];
  for(const s of SUITS)for(const r of RANKS)d.push({id:s+r,type:"suit",suit:s,rank:r,strength:strength[r],points:0});
  for(let n=1;n<=21;n++)d.push({id:"A"+n,type:"trump",rank:""+n,strength:n,points:n});
@@ -63,8 +58,8 @@ const strength=Object.fromEntries(RANKS.map((r,i)=>[r,i]));
 function shuffle(a){for(let i=a.length-1;i;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function label(c){return c.type==="trump"?"A"+c.rank:c.type==="excuse"?"Excuse":c.rank+c.suit}
 function legal(hand,trick){
- if(G.firstTrick && !trick.length){
-    // Premier pli, pas d'atout ni de pique pour le joueur qui commence. L'excuse est acceptée.
+ if(!trick.length){
+    // First trick: no spade or trump. Excuse is always legal.
     return hand.filter(c=>c.type==="suit"&&c.suit!=="♠").concat(hand.filter(c=>c.type==="excuse"));
   }
  let lead=trick.find(c=>c.type!=="excuse");
@@ -89,7 +84,7 @@ function points(t){return t.reduce((s,c)=>s+c.points,0)}
 function newRound(){
  let d=shuffle(deck());G.hands=[[],[],[],[],[]];
  for(let i=0;i<75;i++)G.hands[i%5].push(d[i]);G.dog=d.slice(75);
- G.out=[null,null,null,null,null];G.phase="exchange";G.sel=[];G.trick=[];G.trickPlayers=[];G.firstTrick= true;
+ G.out=[null,null,null,null,null];G.phase="exchange";G.sel=[];G.trick=[];G.trickPlayers=[];
  G.leader=(G.dealer+1)%5;G.current=G.leader;G.history=[];
  for(let i=1;i<5;i++)G.out[i]=chooseExchange(G.hands[i]);
  G.msg="Choisissez 3 cartes à donner au joueur de "+(G.round%2?"droite":"gauche")+".";
@@ -131,9 +126,6 @@ function resolve(){
  G.scores[win]+=pts;G.history.push({winner:win,cards:G.trick.slice()});
  G.msg=NAMES[win]+" remporte le pli ("+pts+" point"+(pts>1?"s":"") +").";
  G.trick=[];G.trickPlayers=[];G.current=win;
- if(G.firstTrick){
-  G.firstTrick = false;
- }
  if(G.hands[0].length===0){finish();return}
  render();if(G.current)ai();
 }
