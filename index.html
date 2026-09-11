@@ -152,13 +152,6 @@ function finish(){
  }
  render();
 }
-function test281(){
- let shooter=0;
- let special=deck().filter(c=>c.type==="trump");
- G.dog=[deck().find(c=>c.type==="trump"&&c.rank==="21")];
-G.history=[{winner:shooter,cards:special}];
- finish();
-}
 function ai(){
  setTimeout(()=>{
   if(G.phase!=="play"||!G.current)return;
@@ -200,7 +193,6 @@ function render(){
  let tr=document.getElementById("trick");tr.innerHTML="";
  G.trick.forEach((c,i)=>{let e=card(c,null);e.title=NAMES[G.trickPlayers[i]];tr.appendChild(e)});
  let co=document.getElementById("controls");co.innerHTML="";
- let test=document.createElement("button");test.textContent="Tester 281";test.onclick=test281;co.appendChild(test);
  if(G.phase==="exchange"){let b=document.createElement("button");b.textContent="Confirmer l'échange ("+G.sel.length+"/3)";
   b.disabled=G.sel.length!==3;b.onclick=exchange;co.appendChild(b)}
  if(G.phase==="roundEnd"){let b=document.createElement("button");b.textContent="Manche suivante";b.onclick=()=>{G.round++;newRound()};co.appendChild(b)}
