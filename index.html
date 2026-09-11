@@ -155,7 +155,7 @@ function finish(){
 function test281(){
  let shooter=0;
  let special=deck().filter(c=>c.type==="trump");
- G.dog=[deck().find(c=>c.type==="suit"&&c.suit==="♠"&&c.rank==="D")];
+ G.dog=[deck().find(c=>c.type==="trump"&&c.rank==="21")];
 G.history=[{winner:shooter,cards:special}];
  finish();
 }
