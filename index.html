@@ -120,7 +120,7 @@ function play(p,c){
  let ok=legal(G.hands[p],G.trick).some(x=>x.id===c.id);if(!ok)return;
  G.hands[p]=G.hands[p].filter(x=>x.id!==c.id);G.trick.push(c);G.trickPlayers.push(p);
  if(G.trick.length<5){G.current=(p+1)%5;render();if(G.current)ai()}
- else resolve();
+ else {render();setTimeout(resolve,2000);}
 }
 function resolve(){
  let wi=winner(G.trick),win=G.trickPlayers[wi],pts=points(G.trick);
