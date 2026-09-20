@@ -88,7 +88,7 @@ function newRound(){
  G.out=[null,null,null,null,null];G.phase="exchange";G.sel=[];G.trick=[];G.trickPlayers=[];G.firstTrick=true;
  G.leader=(G.dealer+1)%5;G.current=G.leader;G.history=[];
  for(let i=1;i<5;i++)G.out[i]=chooseExchange(G.hands[i]);
- G.msg="Choisissez 3 cartes à donner à "+NAMES[(G.round%2?1:4)+".";
+ G.msg="Choisissez 3 cartes à donner à "+NAMES[(G.round%2?1:4)]+".";
 
  render();
 }
