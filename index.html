@@ -186,7 +186,7 @@ function render(){
  for(let i=0;i<5;i++)document.getElementById("p"+i).innerHTML="<b>"+NAMES[i]+"</b><br>"+G.hands[i].length+" cartes"+
    (G.phase==="play"&&G.current===i?"<br>▶ à jouer":"");
  let h=document.getElementById("hand");h.innerHTML="";
- [...G.hands[0]].sort((a,b)=>(a.type.localeCompare(b.type))||(a.strength-b.strength)).forEach(c=>{
+ [...G.hands[0]].sort((a,b)=>({"♦":0,"♣":1,"♥":2,"♠":3}[b.suit]??4)||(a.strength-b.strength)).forEach(c=>{
   let l=G.phase==="play"?legal(G.hands[0],G.trick):G.hands[0];
   let dis=G.phase==="play"&&(G.current!==0||!l.some(x=>x.id===c.id));
   h.appendChild(card(c,dis?null:()=>G.phase==="exchange"?toggle(c):play(0,c),G.sel.some(x=>x.id===c.id),dis));
