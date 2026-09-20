@@ -115,7 +115,7 @@ function exchange(){
  }
  G.phase="play";G.current=G.leader;G.msg="Vous recevez 3 cartes de"+NAMES[(5-dir)%5]+":"+incoming[0].map(label).join(",");
  render();setTimeout(()=>{G.msg=NAMES[G.current]+" commence le premier pli.";
- render();setTimeout(()=>if(G.current)ai()},1500)},1500);
+ render();setTimeout(()=>{if(G.current)ai()},1500)},1500);
 }
 function play(p,c){
  if(G.phase!=="play"||p!==G.current)return;
