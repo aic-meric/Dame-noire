@@ -187,7 +187,7 @@ function render(){
  let h=document.getElementById("hand");h.innerHTML="";
  [...G.hands[0]].sort((a,b)=>(a.type.localeCompare(b.type))||(a.strength-b.strength)).forEach(c=>{
   let l=G.phase==="play"?legal(G.hands[0],G.trick):G.hands[0];
-  let dis=G.phase==="play"&&!l.some(x=>x.id===c.id);
+  let dis=G.phase==="play"&&(G.current!==0||!l.some(x=>x.id===c.id));
   h.appendChild(card(c,dis?null:()=>G.phase==="exchange"?toggle(c):play(0,c),G.sel.some(x=>x.id===c.id),dis));
  });
  let tr=document.getElementById("trick");tr.innerHTML="";
